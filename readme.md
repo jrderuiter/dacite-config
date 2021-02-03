@@ -48,7 +48,8 @@ This configuration dataclass will be responsible for holding our configuration v
 Next, we can use the `YamlConfigReader` class to load values from our YAML file into this data class as follows: 
  
 ```python
-# Load the config values into our configuration class
+from typed_config.readers import YamlConfigReader
+
 config: Config = YamlConfigReader(
     file_path="examples/config.yml"
 ).read_config(Config)
