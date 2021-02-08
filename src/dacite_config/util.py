@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 
 def find_config(file_name, path=None):
@@ -25,3 +26,9 @@ def _walk_to_root(path):
         yield current_dir
         parent_dir = os.path.abspath(os.path.join(current_dir, os.path.pardir))
         last_dir, current_dir = current_dir, parent_dir
+
+
+def for_env(base_file_path: str, env: str):
+    base_file_path = Path(base_file_path)
+    env_file_name = f"{base_file_path.stem}.{env}{base_file_path.suffix}"
+    return base_file_path.parent / env_file_name

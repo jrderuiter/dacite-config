@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from typed_config.readers import ChainedConfigReader, JsonConfigReader, YamlConfigReader
+from typed_config._readers import ChainedReader, JsonReader, YamlReader
 
 @dataclass()
 class DispatchConfig:
@@ -17,14 +17,14 @@ class Config:
 
 
 if __name__ == "__main__":
-    yaml_config: Config = YamlConfigReader("./config.yml").read_config(Config)
+    yaml_config: Config = YamlReader("./config.yml").read_config(Config)
     print(yaml_config)
 
-    json_config: Config = JsonConfigReader("./config.json").read_config(Config)
+    json_config: Config = JsonReader("./config.json").read_config(Config)
     print(json_config)
 
-    chained_config: Config = ChainedConfigReader([
-        YamlConfigReader("./config.yml"),
-        JsonConfigReader("./config.json")
+    chained_config: Config = ChainedReader([
+        YamlReader("./config.yml"),
+        JsonReader("./config.json")
     ]).read_config(Config)
     print(chained_config)

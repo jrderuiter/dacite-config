@@ -1,10 +1,8 @@
-# typed-config
+# dacite-config
 
-A dataclass-based approach for creating typesafe configs in Python.
+Helpers for creating typed, IDE-friendly configs in Python using dataclasses and `dacite`.
 
-## Why typed-config?
-
-### Scenario
+## Why use typed configs?
 
 Consider a situation in which we're tasked with building a small web application. To keep things flexible, we'd like to make some options configurable, including the host address on which the application will listen.
 
@@ -26,13 +24,11 @@ with open("examples/config.yml") as file:
 print(config)
 ```
 
-However, a drawback of this approach is that it gives us a dict of values. This means we don't have any garantee that what we loaded has the required config keys and expected types. (Not to mention that our IDE will be of little help as it also has no idea what to expect from this dict.)
+However, a drawback of this approach is that it only gives us a dict of values. We have no   garantee that what we loaded has the required keys and expected types, meaning things can easily break once we actually start running our application.  
 
-### Introducting typed configs
+### Building (typed) configs using dataclasses
 
-To avoid these issues, we can use typed-config to load our config, validating any required keys and their types along the way.
-
-The basic idea is to first define your configuration as a dataclass, which defines the required configuration fields together with their types:
+We can avoid these issues by using Python's dataclass functionality to create config classes with clearly defined fields and types:
 
 ```python
 from dataclasses import dataclass
@@ -43,37 +39,78 @@ class Config:
     port: int
 ```
 
-This configuration dataclass will be responsible for holding our configuration values and serves as a convenient reference for which configuration fields we expect and what their types will be.
+This configuration class will be responsible for holding our configuration values. It also serves as a convenient reference for which configuration fields we expect and what their types will be!
 
-Next, we can use the `YamlConfigReader` class to load values from our YAML file into this data class as follows: 
- 
-```python
-from typed_config.readers import YamlConfigReader
-
-config: Config = YamlConfigReader(
-    file_path="examples/config.yml"
-).read_config(Config)
-```
-
-This essentially creates a `Config` instance containing the values from the YAML file. When creating this instance, it also checks if any required values are missing from the YAML file or if they have the wrong type.
-
-Once we have the config instance, we can use it as any other Python object:
+We can use the dataclass as follows:
 
 ```python
-print(config.host)  # Prints 'localhost'
-print(config.port)  # Prints 1234
+config: Config = Config(host="localhost", port=1234)
+print(config.host, config.port)
 ```
 
-Due to the typing/field information present in the dataclass, this should also play nicely with any auto-completion and type-checking functionality in your IDE!
+Unfortunately, the standard dataclass implementation does not do any type checking, meaning that we can easily construct configs with invalid types. Moreover, we don't have any easy mechanism to load values from different config sources (e.g. files, environment, etc.) into this new data class.
 
-Of course, this is just a small example to illustrate the idea. Besides this, typed-config also provides several other reader classes to support reading configs from various formats (e.g. JSON, environment variables, etc.) and allows you to combine configs from different locations/formats. More complex configs are also supported, including nested fields etc. 
+### Introducing dacite and dacite config
+
+`dacite-config` aims to provide a flexible approach for loading config values into dataclass-based configs. This is acheived by providing a simple functional API that allow you to load and combine config values from different sources. The loaded values are then injected into your dataclass-based configs using the awesome `dacite` library, which checks for missing values and whether values have the correct types.   
+
+As an example, the following code reads config values from a YAML file (using the `read_yaml` function) and loads the resulting values into our `Config` class using the `load_config` function. Internally, `load_config` calls `dacite.from_dict` to create the dataclass instance and check the loaded values against the dataclass:
+
+```python
+from dacite_config import read_yaml, load_config
+
+config: Config = load_config(
+  read_yaml("examples/config.yml"),
+  config_class=Config,
+)
+
+print(config)
+```
+
+Besides this, you can also combine different config sources using the `chain` function. For example, this code loads config values from a YAML file and combines them with any environment variables that match the prefix `MYAPP_`:
+
+```python
+from dacite_config import read_yaml, read_env, chain, load_config
+
+config: Config = load_config(
+  chain(
+    read_yaml("examples/config.yml"),
+    read_env(prefix="MYAPP_")
+  ),
+  config_class=Config,
+)
+
+print(config)
+```
+
+This allows you to build configs that load their values from a static file but can also be overridden by environment variables.
+
+Of course, you can also load configs from multiple files. This allows you to, for example, split config values for different environments (dev/test/prod) across different files:
+
+```python
+from dacite_config import read_yaml, chain, load_config
+
+env = "prod"
+
+config: Config = load_config(
+  chain(
+    read_yaml("examples/config.yml"),
+    read_yaml(f"examples/config.{env}yml")
+  ),
+  config_class=Config,
+)
+
+print(config)
+```
+
+Of course, this is just a few small examples. Thanks to `dacite`, you can also create much more complicated configs with nested configuration classes, etc. Checkout the documentation for more examples. 
 
 ## Getting started
 
-To get started, you can install typed-config as follows:
+To get started, you can install dacite-config as follows:
 
 ```bash
-python -m pip install git+https://github.com/jrderuiter/typed-config.git
+python -m pip install git+https://github.com/jrderuiter/dacite-config.git
 ```
 
 ## Documentation
@@ -88,7 +125,7 @@ You can contribute in many ways:
 
 ### Report Bugs
 
-Report bugs at https://github.com/jrderuiter/typed-config/issues.
+Report bugs at https://github.com/jrderuiter/dacite-config/issues.
 
 If you are reporting a bug, please include:
 
@@ -110,7 +147,7 @@ We  could always use more documentation, whether as part of the official docs, i
 
 ### Submit Feedback
 
-The best way to send feedback is to file an issue at https://github.com/jrderuiter/typed-config/issues.
+The best way to send feedback is to file an issue at https://github.com/jrderuiter/dacite-config/issues.
 
 If you are proposing a feature:
 
