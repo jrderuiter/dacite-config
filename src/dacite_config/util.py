@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 
-def find_config(file_name, path=None):
+def find_in_path(file_name, path=None):
     path = path or os.getcwd()
 
     for dir_name in _walk_to_root(path):
@@ -10,7 +10,7 @@ def find_config(file_name, path=None):
         if os.path.isfile(file_path):
             return file_path
 
-    raise IOError(f"Config file '{file_name}' not found along path '{path}'")
+    raise FileNotFoundError(f"Config file '{file_name}' not found along path '{path}'")
 
 
 def _walk_to_root(path):
@@ -28,7 +28,11 @@ def _walk_to_root(path):
         last_dir, current_dir = current_dir, parent_dir
 
 
-def for_env(base_file_path: str, env: str):
-    base_file_path = Path(base_file_path)
-    env_file_name = f"{base_file_path.stem}.{env}{base_file_path.suffix}"
-    return base_file_path.parent / env_file_name
+def with_suffix(file_path: str, suffix: str):
+    file_path = Path(file_path)
+    suffixed_name = f"{file_path.stem}.{suffix}{file_path.suffix}"
+    return file_path.parent / suffixed_name
+
+
+def for_env(file_path, env_name):
+    return with_suffix(file_path, suffix=env_name)
